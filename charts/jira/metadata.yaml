@@ -1,0 +1,4 @@
+---
+registry: https://atlassian.github.io/data-center-helm-charts
+name: jira
+version: 1.22.7
