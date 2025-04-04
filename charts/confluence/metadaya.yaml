@@ -1,0 +1,4 @@
+---
+registry: https://atlassian.github.io/data-center-helm-charts
+name: confluence
+version: 1.22.7
