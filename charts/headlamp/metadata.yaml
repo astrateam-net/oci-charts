@@ -1,0 +1,4 @@
+---
+registry: https://kubernetes-sigs.github.io/headlamp/
+name: headlamp
+version: 0.30.1

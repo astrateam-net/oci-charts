@@ -1,0 +1,4 @@
+---
+registry: https://openebs.github.io/openebs
+name: openebs
+version: 4.2.0
