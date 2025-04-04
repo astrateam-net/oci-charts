@@ -1,0 +1,93 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Chart Builder
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        type: string
+        description: Chart Name
+        required: true
+      version:
+        type: string
+        description: Chart Version
+        required: true
+      registry:
+        type: string
+        description: Chart Registry
+        required: true
+      release:
+        type: boolean
+        description: Release
+        required: true
+
+jobs:
+  build:
+    name: Build (${{ inputs.version }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Vars
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        id: vars
+        with:
+          script: |
+            core.setOutput('repository', '${{ github.repository }}'.toLowerCase());
+
+      - name: Install Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+
+      - if: ${{ inputs.release }}
+        name: Install Cosign
+        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+
+      - if: ${{ inputs.release }}
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Add Helm Repository
+        run: |
+          helm repo add upstream ${{ inputs.registry }}
+
+      - name: Update Helm Repository
+        run: |
+          helm repo update upstream
+
+      - name: Pull Chart
+        run: |
+          helm pull upstream/${{ inputs.name }} --version ${{ inputs.version }}
+
+      - if: ${{ inputs.release }}
+        name: Push Chart
+        run: |
+          helm push *.tgz oci://ghcr.io/${{ steps.vars.outputs.repository }}
+
+      - if: ${{ inputs.release }}
+        name: Sign artifacts with Cosign
+        run: |
+          cosign sign --yes ghcr.io/${{ steps.vars.outputs.repository }}/${{ inputs.name }}:${{ inputs.version }}
+
+  # notify:
+  #   if: ${{ inputs.release && !cancelled() }}
+  #   needs: ["build"]
+  #   name: Notify
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - if: ${{ contains(needs.*.result, 'failure') }}
+  #       name: Send Discord Webhook
+  #       uses: sarisia/actions-status-discord@5ddd3b114a98457dd80a39b2f00b6a998cd69008 # v1.15.3
+  #       with:
+  #         color: "0xFF0000"
+  #         description: |
+  #           Name: `${{ inputs.name }}`
+  #           Version: `${{ inputs.version }}`
+  #           [Rebuild](${{ github.server_url }}/${{ github.repository }}/actions/workflows/release.yaml)
+  #         nodetail: true
+  #         title: Chart build failed
+  #         username: GitHub Actions
+  #         url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  #         webhook: ${{ secrets.DISCORD_WEBHOOK }}
