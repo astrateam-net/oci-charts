@@ -1,0 +1,4 @@
+---
+registry: https://community-charts.github.io/helm-charts
+name: n8n
+version: 1.5.8
