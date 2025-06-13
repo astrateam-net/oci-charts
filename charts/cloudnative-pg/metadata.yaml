@@ -1,4 +1,4 @@
 ---
-registry: https://cloudnative-pg.io/charts
-name: cloudnative-pg
-version: 0.24.0
+registry: https://helm.kestra.io
+name: kestra
+version: 0.22.13
