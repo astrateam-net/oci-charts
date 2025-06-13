@@ -1,4 +1,4 @@
 ---
-registry: https://charts.jetstack.io
-name: cert-manager
-version: v1.18.0
+registry: https://cloudnative-pg.io/charts
+name: cloudnative-pg
+version: 0.24.0
