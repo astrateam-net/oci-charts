@@ -1,11 +1,11 @@
-# OCI Helm Charts Mirror
+# OCI Helm Charts Mirror 
 
 This is our stop-gap mirror of OCI Helm Charts that can be used until maintainers of upstream charts publish them.
 
 > [!CAUTION]
 > **Subscribe to the upstream issues or PRs tracking OCI support** because if you wish to use these charts understand it is **your responsiblity to make sure to change to the official OCI chart as soon as possible** as they will be deprecated here. I bare **no resposibility** for you **not paying close attention to this repository and the changes herein**.
 
-## Usage
+### Usage
 
 ### CLI
 
