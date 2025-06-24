@@ -1,4 +1,4 @@
 ---
 registry: https://emberstack.github.io/helm-charts/
 name: reflector
-version: 9.1.11
+version: 9.1.13
