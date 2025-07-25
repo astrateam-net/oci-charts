@@ -1,4 +1,4 @@
 ---
 registry: https://cloudnative-pg.io/charts
 name: cloudnative-pg
-version: 0.24.0
+version: 0.25.0
