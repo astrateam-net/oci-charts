@@ -1,4 +1,4 @@
 ---
 registry: https://helm.kestra.io
 name: kestra
-version: 0.24.4
+version: 1.0.0
