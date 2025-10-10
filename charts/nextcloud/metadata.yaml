@@ -1,4 +1,4 @@
 ---
 registry: https://nextcloud.github.io/helm/
 name: nextcloud
-version: 8.4.0
+version: 8.4.1
