@@ -1,4 +1,4 @@
 ---
 registry: https://nextcloud.github.io/helm/
 name: nextcloud
-version: 9.1.0
+version: 9.1.1
