@@ -1,23 +1,29 @@
 # Local hook config. The reference repository pulls a shared config from
 # `home-operations/.github`; we keep ours self-contained so the repo has no
 # cross-organisation dependency. Tool versions come from .mise/config.toml.
+# lefthook 2 reads jobs as a list, so each one is an array entry.
 
-[pre-commit.jobs.actionlint]
+[[pre-commit.jobs]]
+name = "actionlint"
 glob = ".github/workflows/*.{yml,yaml}"
 run = "actionlint"
 
-[pre-commit.jobs.zizmor]
+[[pre-commit.jobs]]
+name = "zizmor"
 glob = ".github/{workflows,actions}/**/*.{yml,yaml}"
 run = "zizmor --persona regular .github/workflows .github/actions"
 
-[pre-commit.jobs.shellcheck]
+[[pre-commit.jobs]]
+name = "shellcheck"
 glob = "*.sh"
 run = "shellcheck {staged_files}"
 
-[pre-commit.jobs.metadata]
+[[pre-commit.jobs]]
+name = "metadata"
 glob = "apps/*/metadata.yaml"
 run = "./.github/scripts/validate-metadata.sh"
 
-[pre-commit.jobs.oxfmt]
+[[pre-commit.jobs]]
+name = "oxfmt"
 glob = "*.{json,json5}"
 run = "oxfmt --check {staged_files}"
