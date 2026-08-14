@@ -3,13 +3,18 @@
 name: Pull Request
 
 on:
+  merge_group:
   pull_request:
-    branches: ["main"]
+
+permissions:
+  contents: read
 
 jobs:
   prepare:
     name: Prepare
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     outputs:
       changed-files: ${{ steps.changed-files.outputs.changed_files }}
     steps:
@@ -17,54 +22,116 @@ jobs:
         id: changed-files
         uses: bjw-s-labs/action-changed-files@a9a36fb08ce06db9b02fbd8026cc2c0945eb9841 # v0.6.0
         with:
-          patterns: charts/**/metadata.yaml
+          patterns: apps/**/metadata.yaml
 
   changed:
     if: ${{ needs.prepare.outputs.changed-files != '[]' }}
-    needs: ["prepare"]
-    name: Get Changed Charts
-    runs-on: ubuntu-latest
+    needs:
+      - "prepare"
+    name: Get Changed Apps
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     outputs:
-      charts: ${{ steps.charts.outputs.charts }}
+      apps: ${{ steps.apps.outputs.apps }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Extract Chart values
-        id: charts
+      - name: Extract App Values
+        id: apps
+        env:
+          CHANGED_FILES_JSON: ${{ needs.prepare.outputs.changed-files }}
         run: |
-          charts=$(yq eval-all --indent=0 --output-format=json "[.]" ${{ join(fromJSON(needs.prepare.outputs.changed-files), ' ') }})
-          echo "charts=${charts}" >> $GITHUB_OUTPUT
+          files=$(jq -r '. | join(" ")' <<< "$CHANGED_FILES_JSON")
+          # Word splitting is intentional here: one changed file per yq argument.
+          # shellcheck disable=SC2086
+          apps=$(yq eval-all --indent=0 --output-format=json "[.]" $files)
+          echo "apps=${apps}" >> "$GITHUB_OUTPUT"
 
   build:
-    if: ${{ needs.changed.outputs.charts != '[]' }}
-    needs: ["changed"]
-    name: Build ${{ matrix.chart.name }}
-    uses: ./.github/workflows/chart-builder.yaml
+    if: ${{ needs.changed.outputs.apps != '[]' }}
+    needs:
+      - "changed"
+    name: Build ${{ matrix.app.artifactName }}
+    uses: ./.github/workflows/app-builder.yaml
     permissions:
       contents: read
       packages: read
     strategy:
       matrix:
-        chart: ${{ fromJSON(needs.changed.outputs.charts) }}
+        app: ${{ fromJSON(needs.changed.outputs.apps) }}
       fail-fast: false
       max-parallel: 4
     with:
-      name: ${{ matrix.chart.name }}
-      version: ${{ matrix.chart.version }}
-      registry: ${{ matrix.chart.registry }}
+      artifactName: ${{ matrix.app.artifactName }}
+      source: ${{ toJSON(matrix.app.source) }}
       release: false
+
+  workflow-lint:
+    name: Workflow Lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: jdx/mise-action@3c2e0cf82a5b2e5249f0d3635a4d83d0ae861518 # v4.2.5
+        with:
+          experimental: true
+          install_args: --locked
+
+      - name: Lint Workflows
+        run: |
+          actionlint
+          zizmor --persona regular .github/workflows .github/actions
+
+  metadata-lint:
+    name: Metadata Lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: jdx/mise-action@3c2e0cf82a5b2e5249f0d3635a4d83d0ae861518 # v4.2.5
+        with:
+          experimental: true
+          install_args: --locked
+
+      - name: Validate Metadata
+        run: |
+          ./.github/scripts/validate-metadata.sh
 
   status:
     if: ${{ !cancelled() }}
-    needs: ["build"]
+    needs:
+      - "build"
+      - "changed"
+      - "prepare"
+      - metadata-lint
+      - workflow-lint
     name: Build Success
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions: {}
     steps:
+      # cancelled counts as failed: !cancelled() above still runs this job when
+      # individual needs were cancelled but the run was not, and a required job
+      # that never reached a verdict must not clear the merge gate.
       - name: Any jobs failed?
-        if: ${{ contains(needs.*.result, 'failure') }}
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
         run: exit 1
 
       - name: All jobs passed or skipped?
-        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        if: ${{ !(contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
         run: echo "All jobs passed or skipped" && echo "${{ toJSON(needs.*.result) }}"

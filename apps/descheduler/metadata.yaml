@@ -1,0 +1,6 @@
+---
+artifactName: descheduler
+source:
+  helm:
+    registry: https://kubernetes-sigs.github.io/descheduler
+    version: 0.36.0

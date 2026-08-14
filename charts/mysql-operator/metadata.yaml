@@ -1,4 +1,0 @@
----
-registry: https://mysql.github.io/mysql-operator/
-name: mysql-operator
-version: 2.3.0

@@ -1,0 +1,6 @@
+---
+artifactName: emqx-operator
+source:
+  helm:
+    registry: https://repos.emqx.io/charts
+    version: 2.3.2

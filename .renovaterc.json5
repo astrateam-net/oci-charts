@@ -1,23 +1,32 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  extends: [
-    "github>astrateam-net/renovate-config",
-  ],
+  extends: ["github>astrateam-net/renovate-config"],
   customManagers: [
     {
       customType: "regex",
-      description: ["Process Chart versions"],
-      fileMatch: ["(^|/)metadata\\.ya?ml$"],
+      description: ["Process Helm-sourced charts"],
+      managerFilePatterns: ["/(^|/)metadata\\.ya?ml$/"],
       matchStrings: [
-        "registry: (?<registryUrl>\\S+)\nname: (?<depName>\\S+)\nversion: (?<currentValue>\\S+)",
+        "artifactName:\\s+(?<artifactName>\\S+)\\s+source:\\s+helm:\\s+registry:\\s+(?<registryUrl>\\S+)\\s+version:\\s+(?<currentValue>\\S+)(?:\\s+chart:\\s+(?<chart>\\S+))?",
       ],
       datasourceTemplate: "helm",
+      depNameTemplate: "{{#if chart}}{{chart}}{{else}}{{artifactName}}{{/if}}",
+    },
+    {
+      customType: "regex",
+      description: ["Process git-sourced charts"],
+      managerFilePatterns: ["/(^|/)metadata\\.ya?ml$/"],
+      matchStrings: [
+        "source:\\s+git:\\s+repository:\\s+(?<depName>\\S+)\\s+path:\\s+\\S+\\s+tag:\\s+(?<currentValue>\\S+)",
+      ],
+      datasourceTemplate: "git-tags",
+      versioningTemplate: "semver-coerced",
     },
   ],
   packageRules: [
     {
-      description: "Auto-merge Helm Charts",
-      matchDatasources: ["helm"],
+      description: "Auto-merge mirrored charts",
+      matchDatasources: ["helm", "git-tags"],
       automerge: true,
       automergeType: "pr",
       matchUpdateTypes: ["major", "minor", "patch"],

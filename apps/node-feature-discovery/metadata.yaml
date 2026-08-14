@@ -1,0 +1,6 @@
+---
+artifactName: node-feature-discovery
+source:
+  helm:
+    registry: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+    version: 0.19.0

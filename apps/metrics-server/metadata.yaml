@@ -1,0 +1,6 @@
+---
+artifactName: metrics-server
+source:
+  helm:
+    registry: https://kubernetes-sigs.github.io/metrics-server
+    version: 3.13.1

@@ -1,0 +1,6 @@
+---
+artifactName: external-dns
+source:
+  helm:
+    registry: https://kubernetes-sigs.github.io/external-dns
+    version: 1.21.1

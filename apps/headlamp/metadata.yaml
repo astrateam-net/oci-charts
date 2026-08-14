@@ -1,0 +1,6 @@
+---
+artifactName: headlamp
+source:
+  helm:
+    registry: https://kubernetes-sigs.github.io/headlamp/
+    version: 0.44.0

@@ -1,0 +1,6 @@
+---
+artifactName: kestra
+source:
+  helm:
+    registry: https://helm.kestra.io
+    version: 1.3.33

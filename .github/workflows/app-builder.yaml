@@ -1,0 +1,239 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Chart Builder
+
+on:
+  workflow_call:
+    inputs:
+      artifactName:
+        type: string
+        description: Name of the Published Chart
+        required: true
+      source:
+        type: string
+        description: Source block from metadata.yaml, as JSON
+        required: true
+      release:
+        type: boolean
+        description: Release
+        required: true
+    secrets:
+      DISCORD_WEBHOOK:
+        required: false
+
+# No `permissions:` block here on purpose. A reusable workflow may not request
+# more than its caller granted, and this one is called both with read-only
+# permissions (pull requests) and with write permissions (releases), so every
+# job inherits the caller's grant instead of declaring its own.
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-24.04
+    outputs:
+      app-exists: ${{ steps.app.outputs.exists }}
+      source-type: ${{ steps.source.outputs.type }}
+      version: ${{ steps.source.outputs.version }}
+      chart: ${{ steps.source.outputs.chart }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github
+
+      - name: Get Repository Name
+        id: repository
+        run: |
+          echo "name=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine Source Type and Version
+        id: source
+        env:
+          SOURCE: ${{ inputs.source }}
+          ARTIFACT_NAME: ${{ inputs.artifactName }}
+        run: |
+          # The published OCI tag is the upstream version verbatim, leading "v"
+          # included. This mirror has always tagged that way (for example
+          # cert-manager:v1.21.1), so stripping it would break every consumer
+          # pinned to an existing tag.
+          if jq -e 'has("helm")' <<< "$SOURCE" > /dev/null; then
+            {
+              echo "type=helm"
+              echo "version=$(jq -r '.helm.version' <<< "$SOURCE")"
+              echo "chart=$(jq -r --arg fallback "$ARTIFACT_NAME" '.helm.chart // $fallback' <<< "$SOURCE")"
+            } >> "$GITHUB_OUTPUT"
+          elif jq -e 'has("git")' <<< "$SOURCE" > /dev/null; then
+            {
+              echo "type=git"
+              echo "version=$(jq -r '.git.tag' <<< "$SOURCE")"
+              echo "chart=$ARTIFACT_NAME"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Source must define exactly one of: helm, git"
+            exit 1
+          fi
+
+      - if: ${{ inputs.release }}
+        name: Check For Existing Chart
+        uses: ./.github/actions/app-exists
+        id: app
+        with:
+          app: ${{ steps.repository.outputs.name }}/${{ inputs.artifactName }}
+
+  build:
+    name: Build (${{ needs.plan.outputs.version }})
+    runs-on: ubuntu-24.04
+    needs:
+      - plan
+    env:
+      ARTIFACT_NAME: ${{ inputs.artifactName }}
+      CHART_NAME: ${{ needs.plan.outputs.chart }}
+      SOURCE: ${{ inputs.source }}
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: jdx/mise-action@3c2e0cf82a5b2e5249f0d3635a4d83d0ae861518 # v4.2.5
+        with:
+          experimental: true
+          install_args: --locked
+
+      - if: ${{ inputs.release }}
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - if: ${{ needs.plan.outputs.source-type == 'helm' }}
+        name: Fetch Helm Chart
+        run: |
+          registry=$(jq -r '.helm.registry' <<< "$SOURCE")
+          mkdir -p dist
+          helm repo add upstream "$registry"
+          helm repo update upstream
+          if [[ "$ARTIFACT_NAME" == "$CHART_NAME" ]]; then
+            # No rename needed: mirror the upstream tarball verbatim so the
+            # published artifact stays byte-identical to what upstream shipped.
+            helm pull "upstream/$CHART_NAME" --version "$VERSION" --destination ./dist
+          else
+            helm pull "upstream/$CHART_NAME" --version "$VERSION" --untar --untardir ./src
+          fi
+
+      - if: ${{ needs.plan.outputs.source-type == 'git' }}
+        name: Fetch Git Chart
+        run: |
+          repository=$(jq -r '.git.repository' <<< "$SOURCE")
+          path=$(jq -r '.git.path' <<< "$SOURCE")
+          tag=$(jq -r '.git.tag' <<< "$SOURCE")
+          git clone --depth 1 --branch "$tag" "$repository" ./git-src
+          mkdir -p ./src
+          chart="./src/$(basename "$path")"
+          cp -r "./git-src/${path}" "$chart"
+          # A git chart isn't packaged with its dependencies, so vendor them before
+          # packaging. Register any http(s) dependency repos (helm requires it); OCI
+          # (oci://) dependencies resolve directly.
+          yq -r '.dependencies[] | select(.repository // "" | test("^http")) | .name + " " + .repository' "$chart/Chart.yaml" \
+            | while read -r name repo; do helm repo add "$name" "$repo"; done
+          helm dependency build "$chart"
+
+      - if: ${{ hashFiles('src/**') != '' }}
+        name: Package Chart
+        run: |
+          # Only reached when the chart had to be unpacked: a git source, or a
+          # helm source whose upstream chart name differs from artifactName.
+          mkdir -p dist
+          yq --inplace ".name = \"$ARTIFACT_NAME\"" ./src/*/Chart.yaml
+          helm package ./src/* --version "$VERSION" --destination ./dist
+
+      - name: Inspect Chart
+        run: |
+          helm show chart ./dist/*.tgz
+
+      - if: ${{ inputs.release }}
+        name: Push Chart
+        run: |
+          helm push ./dist/*.tgz "oci://ghcr.io/${GITHUB_REPOSITORY,,}"
+
+      - if: ${{ inputs.release }}
+        name: Sign artifacts with Cosign
+        run: |
+          cosign sign --yes "ghcr.io/${GITHUB_REPOSITORY,,}/${ARTIFACT_NAME}:${VERSION}"
+
+  release:
+    if: ${{ inputs.release && needs.plan.outputs.app-exists != 'true' }}
+    name: Release
+    needs:
+      - plan
+      - build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github
+
+      - name: Get Repository Name
+        id: repository
+        run: |
+          echo "name=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Get Release Tag
+        uses: ./.github/actions/release-tag
+        id: release
+        with:
+          token: ${{ github.token }}
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.release.outputs.tag }}
+          ARTIFACT_NAME: ${{ inputs.artifactName }}
+          REPO_NAME: ${{ steps.repository.outputs.name }}
+        run: |
+          cat > release-notes.md <<EOF
+          > [!NOTE]
+          > A new chart has been added.
+
+          ## 📦 Chart
+
+          **Name**: [${ARTIFACT_NAME}](https://github.com/${GH_REPO}/pkgs/container/${REPO_NAME}%2F${ARTIFACT_NAME})
+          EOF
+          gh release create "$TAG" --notes-file release-notes.md
+
+  announce:
+    if: ${{ inputs.release && !cancelled() }}
+    needs:
+      - plan
+      - build
+      - release
+    name: Notify
+    runs-on: ubuntu-24.04
+    permissions: {}
+    env:
+      # Read into env so the step condition can test it; `secrets` is not
+      # available inside `if:` expressions.
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+    steps:
+      - if: ${{ contains(needs.*.result, 'failure') && env.DISCORD_WEBHOOK != '' }}
+        name: Send Discord Webhook
+        uses: sarisia/actions-status-discord@eb045afee445dc055c18d3d90bd0f244fd062708 # v1.16.0
+        with:
+          color: "0xFF0000"
+          description: |
+            Name: `${{ inputs.artifactName }}`
+            Version: `${{ needs.plan.outputs.version }}`
+            [Rebuild](${{ github.server_url }}/${{ github.repository }}/actions/workflows/release.yaml)
+          nodetail: true
+          title: Chart build failed
+          username: GitHub Actions
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          webhook: ${{ env.DISCORD_WEBHOOK }}

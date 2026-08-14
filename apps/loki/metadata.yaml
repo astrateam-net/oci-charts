@@ -1,0 +1,6 @@
+---
+artifactName: loki
+source:
+  helm:
+    registry: https://grafana.github.io/helm-charts
+    version: 7.3.0

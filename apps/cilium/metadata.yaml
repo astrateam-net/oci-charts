@@ -1,0 +1,6 @@
+---
+artifactName: cilium
+source:
+  helm:
+    registry: https://helm.cilium.io
+    version: 1.20.0

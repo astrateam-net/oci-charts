@@ -1,0 +1,6 @@
+---
+artifactName: confluence
+source:
+  helm:
+    registry: https://atlassian.github.io/data-center-helm-charts
+    version: 2.0.14

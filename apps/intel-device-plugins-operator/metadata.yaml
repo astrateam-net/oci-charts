@@ -1,0 +1,6 @@
+---
+artifactName: intel-device-plugins-operator
+source:
+  helm:
+    registry: https://intel.github.io/helm-charts
+    version: 0.36.0

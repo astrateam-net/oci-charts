@@ -1,0 +1,23 @@
+# Local hook config. The reference repository pulls a shared config from
+# `home-operations/.github`; we keep ours self-contained so the repo has no
+# cross-organisation dependency. Tool versions come from .mise/config.toml.
+
+[pre-commit.jobs.actionlint]
+glob = ".github/workflows/*.{yml,yaml}"
+run = "actionlint"
+
+[pre-commit.jobs.zizmor]
+glob = ".github/{workflows,actions}/**/*.{yml,yaml}"
+run = "zizmor --persona regular .github/workflows .github/actions"
+
+[pre-commit.jobs.shellcheck]
+glob = "*.sh"
+run = "shellcheck {staged_files}"
+
+[pre-commit.jobs.metadata]
+glob = "apps/*/metadata.yaml"
+run = "./.github/scripts/validate-metadata.sh"
+
+[pre-commit.jobs.oxfmt]
+glob = "*.{json,json5}"
+run = "oxfmt --check {staged_files}"

@@ -1,0 +1,6 @@
+---
+artifactName: teleport-kube-agent
+source:
+  helm:
+    registry: https://charts.releases.teleport.dev/
+    version: 18.10.4

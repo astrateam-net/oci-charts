@@ -1,0 +1,6 @@
+---
+artifactName: nextcloud
+source:
+  helm:
+    registry: https://nextcloud.github.io/helm/
+    version: 9.2.5

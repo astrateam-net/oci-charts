@@ -1,0 +1,6 @@
+---
+artifactName: vaultwarden
+source:
+  helm:
+    registry: https://gissilabs.github.io/charts/
+    version: 1.4.0

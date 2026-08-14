@@ -1,0 +1,6 @@
+---
+artifactName: cert-manager
+source:
+  helm:
+    registry: https://charts.jetstack.io
+    version: v1.21.1

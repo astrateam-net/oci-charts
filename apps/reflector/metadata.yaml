@@ -1,0 +1,6 @@
+---
+artifactName: reflector
+source:
+  helm:
+    registry: https://emberstack.github.io/helm-charts/
+    version: 10.0.64

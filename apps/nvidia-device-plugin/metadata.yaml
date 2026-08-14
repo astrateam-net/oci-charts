@@ -1,0 +1,6 @@
+---
+artifactName: nvidia-device-plugin
+source:
+  helm:
+    registry: https://nvidia.github.io/k8s-device-plugin
+    version: 0.19.3

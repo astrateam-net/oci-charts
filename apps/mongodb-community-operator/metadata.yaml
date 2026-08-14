@@ -1,0 +1,6 @@
+---
+artifactName: community-operator
+source:
+  helm:
+    registry: https://mongodb.github.io/helm-charts
+    version: 0.13.0
