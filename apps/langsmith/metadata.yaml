@@ -1,0 +1,7 @@
+---
+artifactName: langsmith
+source:
+  git:
+    repository: https://github.com/langchain-ai/helm
+    path: ./charts/langsmith
+    tag: langsmith-0.17.0-rc.6
