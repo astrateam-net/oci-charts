@@ -135,7 +135,9 @@ jobs:
           git clone --depth 1 --branch "$tag" "$repository" ./git-src
           mkdir -p ./src
           chart="./src/$(basename "$path")"
-          cp -r "./git-src/${path}" "$chart"
+          # -L: charts may symlink files from outside their own directory, which
+          # would dangle once the chart is copied out of the source tree.
+          cp -rL "./git-src/${path}" "$chart"
           # A git chart isn't packaged with its dependencies, so vendor them before
           # packaging. Register any http(s) dependency repos (helm requires it); OCI
           # (oci://) dependencies resolve directly.
