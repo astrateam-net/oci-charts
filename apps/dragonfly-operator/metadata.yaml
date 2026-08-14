@@ -1,0 +1,7 @@
+---
+artifactName: dragonfly-operator
+source:
+  git:
+    repository: https://github.com/dragonflydb/dragonfly-operator
+    path: ./charts/dragonfly-operator
+    tag: v1.6.1
