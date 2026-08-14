@@ -1,0 +1,4 @@
+---
+registry: https://charts.hetzner.cloud
+name: hcloud-csi
+version: 2.22.1
