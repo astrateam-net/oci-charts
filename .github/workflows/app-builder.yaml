@@ -64,9 +64,12 @@ jobs:
               echo "chart=$(jq -r --arg fallback "$ARTIFACT_NAME" '.helm.chart // $fallback' <<< "$SOURCE")"
             } >> "$GITHUB_OUTPUT"
           elif jq -e 'has("git")' <<< "$SOURCE" > /dev/null; then
+            # A monorepo tags each chart as <chart>-<version>
+            # (langsmith-0.17.0-rc.6), which helm package rejects as a version.
+            # Drop that prefix; the clone step below reads the tag verbatim.
             {
               echo "type=git"
-              echo "version=$(jq -r '.git.tag' <<< "$SOURCE")"
+              echo "version=$(jq -r --arg name "$ARTIFACT_NAME" '.git.tag | ltrimstr($name + "-")' <<< "$SOURCE")"
               echo "chart=$ARTIFACT_NAME"
             } >> "$GITHUB_OUTPUT"
           else
