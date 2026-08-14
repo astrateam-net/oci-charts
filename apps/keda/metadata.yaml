@@ -1,0 +1,6 @@
+---
+artifactName: keda
+source:
+  helm:
+    registry: https://kedacore.github.io/charts
+    version: 2.20.2

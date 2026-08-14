@@ -1,0 +1,6 @@
+---
+artifactName: juicefs-csi-driver
+source:
+  helm:
+    registry: https://juicedata.github.io/charts
+    version: 0.32.3
