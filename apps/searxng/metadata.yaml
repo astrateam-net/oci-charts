@@ -1,0 +1,6 @@
+---
+artifactName: searxng
+source:
+  helm:
+    registry: https://techpipe-io.github.io/searxng-helm-chart
+    version: 0.1.11
