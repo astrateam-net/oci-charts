@@ -1,0 +1,6 @@
+---
+artifactName: typesense-operator
+source:
+  helm:
+    registry: https://akyriako.github.io/typesense-operator
+    version: 0.4.1
