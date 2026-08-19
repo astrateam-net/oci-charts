@@ -1,7 +1,0 @@
----
-artifactName: mission-control
-source:
-  git:
-    repository: https://github.com/langchain-ai/helm
-    path: ./charts/mission-control
-    tag: mission-control-1.2.4
