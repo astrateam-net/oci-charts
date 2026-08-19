@@ -1,0 +1,7 @@
+---
+artifactName: langsmith-auth-proxy
+source:
+  git:
+    repository: https://github.com/langchain-ai/helm
+    path: ./charts/langsmith-auth-proxy
+    tag: langsmith-auth-proxy-0.0.11
