@@ -3,4 +3,4 @@ artifactName: n8n
 source:
   helm:
     registry: https://community-charts.github.io/helm-charts
-    version: 1.24.30
+    version: 1.24.31
