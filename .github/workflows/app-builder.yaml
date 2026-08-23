@@ -34,6 +34,7 @@ jobs:
       app-exists: ${{ steps.app.outputs.exists }}
       source-type: ${{ steps.source.outputs.type }}
       version: ${{ steps.source.outputs.version }}
+      publish-version: ${{ steps.source.outputs.publish-version }}
       chart: ${{ steps.source.outputs.chart }}
     steps:
       - name: Checkout
@@ -77,6 +78,17 @@ jobs:
             exit 1
           fi
 
+          # A patched chart is no longer what upstream shipped, so it is
+          # published under a distinct tag. The upstream version still drives
+          # the fetch; only the packaged artifact carries the suffix.
+          version=$(grep '^version=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)
+          suffix=$(jq -r '(.helm // .git).versionSuffix // empty' <<< "$SOURCE")
+          if [[ -n "$suffix" ]]; then
+            echo "publish-version=${version}-${suffix}" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish-version=${version}" >> "$GITHUB_OUTPUT"
+          fi
+
       - if: ${{ inputs.release }}
         name: Check For Existing Chart
         uses: ./.github/actions/app-exists
@@ -94,6 +106,7 @@ jobs:
       CHART_NAME: ${{ needs.plan.outputs.chart }}
       SOURCE: ${{ inputs.source }}
       VERSION: ${{ needs.plan.outputs.version }}
+      PUBLISH_VERSION: ${{ needs.plan.outputs.publish-version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -148,6 +161,27 @@ jobs:
             | while read -r name repo; do helm repo add "$name" "$repo"; done
           helm dependency build "$chart"
 
+      - name: Apply Patches
+        run: |
+          shopt -s nullglob
+          patches=("apps/${ARTIFACT_NAME}/patches"/*.patch)
+          if [[ ${#patches[@]} -eq 0 ]]; then
+            exit 0
+          fi
+          # The verbatim path leaves a tarball and never unpacks. A patched
+          # chart has to be repacked, so unpack it and drop the original.
+          tarballs=(dist/*.tgz)
+          if [[ ${#tarballs[@]} -gt 0 ]]; then
+            mkdir -p ./src
+            tar -xzf "${tarballs[0]}" -C ./src
+            rm -f "${tarballs[0]}"
+          fi
+          chart=(./src/*)
+          for patch in "${patches[@]}"; do
+            echo "Applying ${patch}"
+            patch -p1 --directory="${chart[0]}" --input="${GITHUB_WORKSPACE}/${patch}"
+          done
+
       - if: ${{ hashFiles('src/**') != '' }}
         name: Package Chart
         run: |
@@ -155,7 +189,7 @@ jobs:
           # helm source whose upstream chart name differs from artifactName.
           mkdir -p dist
           yq --inplace ".name = \"$ARTIFACT_NAME\"" ./src/*/Chart.yaml
-          helm package ./src/* --version "$VERSION" --destination ./dist
+          helm package ./src/* --version "$PUBLISH_VERSION" --destination ./dist
 
       - name: Inspect Chart
         run: |
@@ -169,7 +203,7 @@ jobs:
       - if: ${{ inputs.release }}
         name: Sign artifacts with Cosign
         run: |
-          cosign sign --yes "ghcr.io/${GITHUB_REPOSITORY,,}/${ARTIFACT_NAME}:${VERSION}"
+          cosign sign --yes "ghcr.io/${GITHUB_REPOSITORY,,}/${ARTIFACT_NAME}:${PUBLISH_VERSION}"
 
   release:
     if: ${{ inputs.release && needs.plan.outputs.app-exists != 'true' }}

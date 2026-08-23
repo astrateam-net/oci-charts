@@ -1,0 +1,30 @@
+--- a/values.yaml	2026-08-23 04:25:25.539926057 +0300
++++ b/values.yaml	2026-08-23 04:25:25.577108962 +0300
+@@ -105,6 +105,10 @@
+   existingSecretName: ""
+   keyName: key
+ 
++builder:
++  mode: ""
++  authToken: ""
++
+ postgres:
+   # The bundled StatefulSet is intended for demos and testing. For production,
+   # point OpenRun at a managed Postgres service or a CloudNativePG deployment.
+--- a/files/openrun.toml.tmpl	2026-08-23 04:25:25.528384926 +0300
++++ b/files/openrun.toml.tmpl	2026-08-23 04:25:25.576901253 +0300
+@@ -74,6 +74,14 @@
+ {{- $defaultDomain = printf "openrun.%s.svc.cluster.local" $ns }}
+ {{- end }}
+ default_domain = "{{ $defaultDomain }}"
++{{- with .Values.builder.authToken }}
++builder_auth_token = "{{ . }}"
++{{- end }}
++{{- with .Values.builder.mode }}
++
++[builder]
++mode = "{{ . }}"
++{{- end }}
+ 
+ [kubernetes]
+ namespace = "{{ default .Release.Namespace .Values.config.kubernetes.namespace }}"
