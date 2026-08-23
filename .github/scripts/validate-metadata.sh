@@ -52,7 +52,7 @@ for file in "${files[@]}"; do
       registry=$(jq -r '.source.helm.registry // ""' <<< "$doc")
       [[ -n "$registry" && ! "$registry" =~ ^https?:// ]] &&
         fail "$file" "source.helm.registry '${registry}' must be an http(s) URL"
-      extra=$(jq -r '.source.helm | keys_unsorted[] | select(. != "registry" and . != "version" and . != "chart")' <<< "$doc")
+      extra=$(jq -r '.source.helm | keys_unsorted[] | select(. != "registry" and . != "version" and . != "chart" and . != "versionSuffix")' <<< "$doc")
       [[ -n "$extra" ]] && fail "$file" "Unknown source.helm key(s): ${extra//$'\n'/, }"
       ;;
     git)
@@ -60,7 +60,7 @@ for file in "${files[@]}"; do
         [[ "$(jq -r ".source.git.${key} // \"\"" <<< "$doc")" == "" ]] &&
           fail "$file" "source.git.${key} is required"
       done
-      extra=$(jq -r '.source.git | keys_unsorted[] | select(. != "repository" and . != "path" and . != "tag")' <<< "$doc")
+      extra=$(jq -r '.source.git | keys_unsorted[] | select(. != "repository" and . != "path" and . != "tag" and . != "versionSuffix")' <<< "$doc")
       [[ -n "$extra" ]] && fail "$file" "Unknown source.git key(s): ${extra//$'\n'/, }"
       ;;
     *)
