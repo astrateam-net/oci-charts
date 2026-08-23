@@ -4,7 +4,10 @@
   "title": "Chart Metadata",
   "type": "object",
   "additionalProperties": false,
-  "required": ["artifactName", "source"],
+  "required": [
+    "artifactName",
+    "source"
+  ],
   "properties": {
     "$schema": {
       "type": "string"
@@ -18,13 +21,27 @@
       "type": "object",
       "description": "Where to fetch the chart from. Exactly one of `helm` or `git` must be set.",
       "additionalProperties": false,
-      "oneOf": [{ "required": ["helm"] }, { "required": ["git"] }],
+      "oneOf": [
+        {
+          "required": [
+            "helm"
+          ]
+        },
+        {
+          "required": [
+            "git"
+          ]
+        }
+      ],
       "properties": {
         "helm": {
           "type": "object",
           "description": "Pull from a traditional Helm repository",
           "additionalProperties": false,
-          "required": ["registry", "version"],
+          "required": [
+            "registry",
+            "version"
+          ],
           "properties": {
             "registry": {
               "type": "string",
@@ -39,6 +56,10 @@
               "type": "string",
               "pattern": "^[a-z0-9-]+$",
               "description": "Upstream chart name (defaults to artifactName)"
+            },
+            "versionSuffix": {
+              "type": "string",
+              "description": "Suffix appended to the published tag when the chart carries patches."
             }
           }
         },
@@ -46,7 +67,11 @@
           "type": "object",
           "description": "Pull from a git repository and package a chart subdirectory",
           "additionalProperties": false,
-          "required": ["repository", "path", "tag"],
+          "required": [
+            "repository",
+            "path",
+            "tag"
+          ],
           "properties": {
             "repository": {
               "type": "string",
@@ -60,6 +85,10 @@
             "tag": {
               "type": "string",
               "description": "Git tag to clone (also used as the published OCI tag)"
+            },
+            "versionSuffix": {
+              "type": "string",
+              "description": "Suffix appended to the published tag when the chart carries patches."
             }
           }
         }
