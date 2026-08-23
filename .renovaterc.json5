@@ -25,6 +25,21 @@
   ],
   packageRules: [
     {
+      description: [
+        "langchain-ai/helm tags every chart it holds with the chart name, so git-tags hands each of them the whole repository's tags.",
+        "extractVersion keeps only this chart's tags and strips the prefix; semver-coerced would flatten every 0.17.0-rc.N to 0.17.0 and see no update at all.",
+      ],
+      matchFileNames: ["apps/langsmith/metadata.yaml"],
+      extractVersion: "^langsmith-(?<version>\\d+\\..+)$",
+      versioning: "semver",
+      ignoreUnstable: false,
+    },
+    {
+      matchFileNames: ["apps/langsmith-auth-proxy/metadata.yaml"],
+      extractVersion: "^langsmith-auth-proxy-(?<version>\\d+\\..+)$",
+      versioning: "semver",
+    },
+    {
       description: "Auto-merge mirrored charts",
       matchDatasources: ["helm", "git-tags"],
       automerge: true,
