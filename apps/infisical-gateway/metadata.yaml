@@ -1,6 +1,7 @@
 ---
 artifactName: infisical-gateway
 source:
-  helm:
-    registry: https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
-    version: 1.2.0
+  git:
+    repository: https://github.com/Infisical/infisical.git
+    path: helm-charts/infisical-gateway
+    tag: v0.162.24
