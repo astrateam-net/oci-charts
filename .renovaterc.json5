@@ -14,10 +14,13 @@
     },
     {
       customType: "regex",
-      description: ["Process git-sourced charts"],
+      description: [
+        "Process git-sourced charts",
+        "A repository holding several charts prefixes each tag with the chart name; currentValue starts at the first version digit so it stays a version Renovate can compare, and the prefix is left in the file untouched.",
+      ],
       managerFilePatterns: ["/(^|/)metadata\\.ya?ml$/"],
       matchStrings: [
-        "source:\\s+git:\\s+repository:\\s+(?<depName>\\S+)\\s+path:\\s+\\S+\\s+tag:\\s+(?<currentValue>\\S+)",
+        "source:\\s+git:\\s+repository:\\s+(?<depName>\\S+)\\s+path:\\s+\\S+\\s+tag:\\s+\\S*?(?<currentValue>v?\\d+\\.\\S*)",
       ],
       datasourceTemplate: "git-tags",
       versioningTemplate: "semver-coerced",
