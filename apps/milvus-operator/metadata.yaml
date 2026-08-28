@@ -3,4 +3,4 @@ artifactName: milvus-operator
 source:
   helm:
     registry: https://zilliztech.github.io/milvus-operator
-    version: 1.3.8
+    version: 1.3.9
