@@ -3,5 +3,5 @@ artifactName: openrun
 source:
   helm:
     registry: https://openrundev.github.io/openrun-helm-charts
-    version: 0.19.2
+    version: 0.19.3
     versionSuffix: astra.1
