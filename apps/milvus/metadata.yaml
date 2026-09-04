@@ -3,4 +3,4 @@ artifactName: milvus
 source:
   helm:
     registry: https://zilliztech.github.io/milvus-helm
-    version: 5.0.25
+    version: 5.0.27
