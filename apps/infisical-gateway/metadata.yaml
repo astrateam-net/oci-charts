@@ -4,4 +4,4 @@ source:
   git:
     repository: https://github.com/Infisical/infisical.git
     path: helm-charts/infisical-gateway
-    tag: v0.165.3
+    tag: v0.165.6
