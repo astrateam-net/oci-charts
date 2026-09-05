@@ -4,4 +4,4 @@ source:
   git:
     repository: https://github.com/firecrawl/firecrawl
     path: ./examples/kubernetes/firecrawl-helm
-    tag: v2.11.296
+    tag: v2.11.305
