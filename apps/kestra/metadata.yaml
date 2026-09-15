@@ -3,4 +3,4 @@ artifactName: kestra
 source:
   helm:
     registry: https://helm.kestra.io
-    version: 2.0.1
+    version: 2.0.2
