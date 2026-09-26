@@ -3,5 +3,5 @@ artifactName: infisical-secrets-operator
 source:
   helm:
     registry: https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
-    version: 0.11.9
+    version: 0.11.10
     chart: secrets-operator
