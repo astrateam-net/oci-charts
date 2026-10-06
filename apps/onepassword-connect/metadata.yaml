@@ -3,4 +3,4 @@ artifactName: connect
 source:
   helm:
     registry: https://1password.github.io/connect-helm-charts
-    version: 2.4.1
+    version: 2.4.2
