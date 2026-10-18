@@ -3,4 +3,4 @@ artifactName: nextcloud
 source:
   helm:
     registry: https://nextcloud.github.io/helm/
-    version: 9.4.0
+    version: 9.4.1
