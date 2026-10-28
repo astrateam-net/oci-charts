@@ -3,4 +3,4 @@ artifactName: hcloud-csi
 source:
   helm:
     registry: https://charts.hetzner.cloud
-    version: 2.24.0
+    version: 2.24.1
