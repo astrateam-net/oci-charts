@@ -23,7 +23,7 @@ permissions: {}
 jobs:
   plan:
     name: Plan (${{ inputs.chartName }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       pull-requests: write
@@ -68,7 +68,7 @@ jobs:
     name: Merge (${{ inputs.chartName }})
     needs:
       - plan
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       pull-requests: write
@@ -91,7 +91,7 @@ jobs:
     name: Announce (${{ inputs.chartName }})
     needs:
       - merge
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
