@@ -1,0 +1,6 @@
+---
+artifactName: llamacloud
+source:
+  helm:
+    registry: https://run-llama.github.io/helm-charts
+    version: 0.12.0
